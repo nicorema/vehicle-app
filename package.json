@@ -1,0 +1,26 @@
+{
+  "name": "vehicle-events",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "docker:build:app": "docker buildx build --platform linux/amd64 -t vehicle-app .",
+    "docker:tag:app": "docker tag vehicle-app:latest 600946366035.dkr.ecr.us-east-2.amazonaws.com/vehicle-app:latest",
+    "docker:push:app": "docker push 600946366035.dkr.ecr.us-east-2.amazonaws.com/vehicle-app:latest",
+    "deploy:app": "npm run docker:build:app && npm run docker:tag:app && npm run docker:push:app && aws ecs update-service --cluster vehicle-cluster --service vehicle-service --force-new-deployment --region us-east-2",
+    "docker:build:emer-que": "docker buildx build --platform linux/amd64 -f Dockerfile.emergencyQueueWorker -t vehicle-queue-worker:emergency .",
+    "docker:tag:emer-que": "docker tag vehicle-queue-worker:emergency 600946366035.dkr.ecr.us-east-2.amazonaws.com/vehicle-queue-worker:emergency",
+    "docker:push:emer-que": "docker push 600946366035.dkr.ecr.us-east-2.amazonaws.com/vehicle-queue-worker:emergency",
+    "deploy:emer-que": "npm run docker:build:emer-que && npm run docker:tag:emer-que && npm run docker:push:emer-que && aws ecs update-service --cluster vehicle-cluster --service queue-worker-service --force-new-deployment --region us-east-2",
+    "docker:build:pos-que": "docker buildx build --platform linux/amd64 -f Dockerfile.positionQueueWorker -t vehicle-queue-worker:position .",
+    "docker:tag:pos-que": "docker tag vehicle-queue-worker:position 600946366035.dkr.ecr.us-east-2.amazonaws.com/vehicle-queue-worker:position",
+    "docker:push:pos-que": "docker push 600946366035.dkr.ecr.us-east-2.amazonaws.com/vehicle-queue-worker:position",
+    "deploy:pos-que": "npm run docker:build:pos-que && npm run docker:tag:pos-que && npm run docker:push:pos-que && aws ecs update-service --cluster vehicle-cluster --service queue-worker-position-service --force-new-deployment --region us-east-2",
+    "deploy:all": "npm run deploy:app && npm run deploy:emer-que && npm run deploy:pos-que"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.936.0",
+    "@aws-sdk/client-ses": "^3.936.0",
+    "express": "^4.18.2"
+  }
+}
