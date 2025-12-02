@@ -1,13 +1,18 @@
 const nodemailer = require("nodemailer");
 const { google } = require("googleapis");
 
-const CLIENT_ID = '';
-const CLIENT_SECRET = '';
-const REDIRECT_URI = '';
-const REFRESH_TOKEN = '';
-const MAIL = ''
+const CLIENT_ID = "";
+const CLIENT_SECRET = "";
+const REDIRECT_URI = "";
+const REFRESH_TOKEN = "";
+const MAIL = "";
 
-const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+const oAuth2Client = new google.auth.OAuth2(
+  CLIENT_ID,
+  CLIENT_SECRET,
+  REDIRECT_URI
+);
+
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
 async function sendEmergencyMail() {
@@ -29,15 +34,15 @@ async function sendEmergencyMail() {
     const mailOptions = {
       from: MAIL,
       to: MAIL,
-      subject: 'Emergency Mail',
-      text: 'Emergency mail',
-      html: '<h1>Emergency mail</h1>',
+      subject: "Emergency Mail",
+      text: "Emergency mail",
+      html: "<h1>Emergency mail</h1>",
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('Emergency mail successfully sent:', result);
+    console.log("Emergency mail successfully sent");
   } catch (error) {
-    console.log('Error sending emergency mail:', error);
+    console.log("Error sending emergency mail:", error);
   }
 }
 

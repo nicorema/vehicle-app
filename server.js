@@ -15,7 +15,6 @@ const QUEUE_MAP = {
 
 app.post("/event", async (req, res) => {
   const timestamp = new Date().toISOString();
-  console.log(JSON.stringify({ timestamp, event: req.body }));
 
   const type = req.body.type?.toLowerCase();
   const queueUrl = QUEUE_MAP[type];

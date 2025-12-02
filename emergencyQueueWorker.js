@@ -3,7 +3,7 @@ const {
   ReceiveMessageCommand,
   DeleteMessageCommand,
 } = require("@aws-sdk/client-sqs");
-const { sendEmergencyMail } = require("./mailer");
+const { sendEmergencyMail } = require("./sendEmergencyMail");
 
 const sqsClient = new SQSClient({ region: "us-east-2" });
 const emergencyQueueUrl =
