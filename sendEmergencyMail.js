@@ -12,10 +12,9 @@ const oAuth2Client = new google.auth.OAuth2(
   CLIENT_SECRET,
   REDIRECT_URI
 );
-
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-async function sendEmergencyMail() {
+async function sendEmergencyMail(messageBody) {
   try {
     const accessToken = await oAuth2Client.getAccessToken();
 
@@ -31,16 +30,43 @@ async function sendEmergencyMail() {
       },
     });
 
+    // Parse the message body to extract emergency information
+    let emergencyData = {};
+    try {
+      emergencyData = JSON.parse(messageBody);
+    } catch (e) {
+      // If parsing fails, use the raw message body
+      emergencyData = { raw: messageBody };
+    }
+
+    // Extract key information
+    const vehiclePlate = emergencyData.vehicle_plate || "Unknown";
+    const eventType = emergencyData.type || "Unknown";
+    const status = emergencyData.status || "Unknown";
+
+    // Build email content with emergency details
+    const emailText = `Emergency Alert!
+
+Vehicle Plate: ${vehiclePlate}
+Event Type: ${eventType}
+Status: ${status}`;
+
+    const emailHtml = `<h1>Emergency Alert!</h1>
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <p><strong>Vehicle Plate:</strong> ${vehiclePlate}</p>
+        <p><strong>Event Type:</strong> ${eventType}</p>
+        <p><strong>Status:</strong> ${status}</p>
+      </div>`;
+
     const mailOptions = {
       from: MAIL,
       to: MAIL,
-      subject: "Emergency Mail",
-      text: "Emergency mail",
-      html: "<h1>Emergency mail</h1>",
+      subject: `Emergency Alert - ${vehiclePlate}`,
+      text: emailText,
+      html: emailHtml,
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log("Emergency mail successfully sent");
   } catch (error) {
     console.log("Error sending emergency mail:", error);
   }
