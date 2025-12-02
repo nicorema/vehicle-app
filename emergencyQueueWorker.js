@@ -3,6 +3,7 @@ const {
   ReceiveMessageCommand,
   DeleteMessageCommand,
 } = require("@aws-sdk/client-sqs");
+const { sendEmergencyMail } = require("./mailer");
 
 const sqsClient = new SQSClient({ region: "us-east-2" });
 const emergencyQueueUrl =
@@ -12,6 +13,8 @@ async function pollQueue() {
   const command = new ReceiveMessageCommand({
     QueueUrl: emergencyQueueUrl,
     MaxNumberOfMessages: 10,
+    VisibilityTimeout: 10,
+    WaitTimeSeconds: 20,
   });
 
   try {
@@ -19,13 +22,15 @@ async function pollQueue() {
     if (data.Messages) {
       for (const msg of data.Messages) {
         console.log("Emergency message received:", msg.Body);
-
+        await sendEmergencyMail(msg.Body);
+        console.log("Emergency mail sent successfully");
         await sqsClient.send(
           new DeleteMessageCommand({
             QueueUrl: emergencyQueueUrl,
             ReceiptHandle: msg.ReceiptHandle,
           })
         );
+        console.log("Message processed and removed from the queue");
       }
     }
   } catch (err) {

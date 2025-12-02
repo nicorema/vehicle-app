@@ -12,21 +12,33 @@ async function pollQueue() {
   const command = new ReceiveMessageCommand({
     QueueUrl: positionQueueUrl,
     MaxNumberOfMessages: 10,
+    VisibilityTimeout: 10,
+    WaitTimeSeconds: 20,
   });
 
   try {
     const data = await sqsClient.send(command);
     if (data.Messages) {
-      for (const msg of data.Messages) {
-        console.log("Position message received:", msg.Body);
+      const processingPromises = data.Messages.map(async (msg) => {
+        try {
+          console.log("Position message received:", msg.Body);
 
-        await sqsClient.send(
-          new DeleteMessageCommand({
-            QueueUrl: positionQueueUrl,
-            ReceiptHandle: msg.ReceiptHandle,
-          })
-        );
-      }
+          await sqsClient.send(
+            new DeleteMessageCommand({
+              QueueUrl: positionQueueUrl,
+              ReceiptHandle: msg.ReceiptHandle,
+            })
+          );
+          console.log("Message processed and removed from the queue");
+        } catch (err) {
+          console.error(
+            "Error processing the message, it will be available for retry in the queue",
+            msg.Body,
+            err
+          );
+        }
+      });
+      await Promise.allSettled(processingPromises);
     }
   } catch (err) {
     console.error("Error polling queue:", err);
