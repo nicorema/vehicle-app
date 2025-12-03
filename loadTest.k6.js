@@ -1,5 +1,5 @@
 import http from "k6/http";
-import { check } from "k6";
+import { check, Counter } from "k6";
 
 export const options = {
   scenarios: {
@@ -17,8 +17,13 @@ export const options = {
 const BASE_URL =
   "http://vehicle-alb-210669922.us-east-2.elb.amazonaws.com/event";
 
+// Custom metrics to track message types
+const emergencyCounter = new Counter("emergency_messages");
+const positionCounter = new Counter("position_messages");
+const status200Counter = new Counter("status_200_responses");
+
 // Use a shared counter approach - each VU will contribute to total count
-// We'll use a probabilistic approach: 1 in 2000 chance
+// We'll use a probabilistic approach: 1 in 1000 chance
 // To ensure exactly 1, we can use __ITER to track across all VUs
 let emergencySent = false;
 
@@ -66,23 +71,44 @@ export default function () {
 
   const res = http.post(BASE_URL, JSON.stringify(payload), params);
 
+  // Track status 200 responses
+  if (res.status === 200) {
+    status200Counter.add(1);
+  }
+
+  // Track message types
+  if (isEmergency) {
+    emergencyCounter.add(1);
+  } else {
+    positionCounter.add(1);
+  }
+
   check(res, {
     "status is 200": (r) => r.status === 200,
   });
-
-  if (isEmergency) {
-    console.log(`Emergency request sent!`);
-  }
 }
 
 export function handleSummary(data) {
+  const totalRequests = data.metrics.http_reqs.values.count;
+  const status200Count = data.metrics.status_200_responses
+    ? data.metrics.status_200_responses.values.count
+    : 0;
+  const emergencyCount = data.metrics.emergency_messages
+    ? data.metrics.emergency_messages.values.count
+    : 0;
+  const positionCount = data.metrics.position_messages
+    ? data.metrics.position_messages.values.count
+    : 0;
+
   return {
     stdout: `
 === Load Test Summary ===
-Total requests: ${data.metrics.http_reqs.values.count}
-Successful (200): ${data.metrics.http_req_duration.values.count}
+Total requests: ${totalRequests}
+Status 200 responses: ${status200Count}
+Emergency messages sent: ${emergencyCount}
+Position messages sent: ${positionCount}
 Duration: 30s
-Rate: ${(data.metrics.http_reqs.values.count / 30).toFixed(2)} requests/second
+Rate: ${(totalRequests / 30).toFixed(2)} requests/second
 Note: Emergency requests use probabilistic selection (1/1000 chance per request)
     `,
   };
