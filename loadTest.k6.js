@@ -5,7 +5,7 @@ export const options = {
   scenarios: {
     constant_request_rate: {
       executor: "constant-arrival-rate",
-      rate: 67, // ~67 requests per second to achieve ~2000 in 30s
+      rate: 33, // ~33 requests per second to achieve ~1000 in 30s
       timeUnit: "1s",
       duration: "30s",
       preAllocatedVUs: 50,
@@ -24,10 +24,10 @@ let emergencySent = false;
 
 export default function () {
   // Use __ITER which is unique across all VUs
-  // Randomly select one iteration number (0-1999) to be emergency
+  // Randomly select one iteration number (0-999) to be emergency
   // Since we can't share state, we'll use a probabilistic approach
   // that should result in approximately 1 emergency
-  const isEmergency = !emergencySent && Math.random() < 1 / 2000;
+  const isEmergency = !emergencySent && Math.random() < 1 / 1000;
 
   if (isEmergency) {
     emergencySent = true;
@@ -83,7 +83,7 @@ Total requests: ${data.metrics.http_reqs.values.count}
 Successful (200): ${data.metrics.http_req_duration.values.count}
 Duration: 30s
 Rate: ${(data.metrics.http_reqs.values.count / 30).toFixed(2)} requests/second
-Note: Emergency requests use probabilistic selection (1/2000 chance per request)
+Note: Emergency requests use probabilistic selection (1/1000 chance per request)
     `,
   };
 }
